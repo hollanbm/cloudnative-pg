@@ -234,14 +234,24 @@ func (env TestingEnvironment) ExecCommandInInstancePod(
 // DatabaseName is a special type for the database argument in an Exec call
 type DatabaseName string
 
-// ExecQueryInInstancePod executes a query in an instance pod, by connecting to the pod
-// and the postgres container, and using a local connection with the postgres user
+// ExecQueryInInstancePod see ExecQueryInInstancePodWithTimeout. This function has a default timeout of 10 seconds.
 func (env TestingEnvironment) ExecQueryInInstancePod(
 	podLocator PodLocator,
 	dbname DatabaseName,
 	query string,
 ) (string, string, error) {
 	timeout := time.Second * 10
+	return env.ExecQueryInInstancePodWithTimeout(podLocator, dbname, query, timeout)
+}
+
+// ExecQueryInInstancePodWithTimeout executes a query in an instance pod, by connecting to the pod
+// and the postgres container, and using a local connection with the postgres user
+func (env TestingEnvironment) ExecQueryInInstancePodWithTimeout(
+	podLocator PodLocator,
+	dbname DatabaseName,
+	query string,
+	timeout time.Duration,
+) (string, string, error) {
 	return env.ExecCommandInInstancePod(
 		PodLocator{
 			Namespace: podLocator.Namespace,

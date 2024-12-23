@@ -1901,16 +1901,20 @@ func switchWalAndGetLatestArchive(namespace, podName string) string {
 		},
 		testsUtils.PostgresDBName,
 		"CHECKPOINT;")
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).ToNot(HaveOccurred(),
+		"failed to trigger a new wal while executing 'switchWalAndGetLatestArchive'")
 
-	out, _, err := env.ExecQueryInInstancePod(
+	out, _, err := env.ExecQueryInInstancePodWithTimeout(
 		testsUtils.PodLocator{
 			Namespace: namespace,
 			PodName:   podName,
 		},
 		testsUtils.PostgresDBName,
-		"SELECT pg_walfile_name(pg_switch_wal());")
-	Expect(err).ToNot(HaveOccurred())
+		"SELECT pg_walfile_name(pg_switch_wal());",
+		20,
+	)
+	Expect(err).ToNot(HaveOccurred(), "failed to get latest wal file name while executing "+
+		"'switchWalAndGetLatestArchive")
 
 	return strings.TrimSpace(out)
 }
