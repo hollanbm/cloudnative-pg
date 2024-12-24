@@ -2555,39 +2555,6 @@ func DeleteResourcesFromFile(namespace, sampleFilePath string) error {
 	return nil
 }
 
-// Assert in the giving cluster, all the postgres db has no pending restart
-func AssertPostgresNoPendingRestart(namespace, clusterName string, timeout int) {
-	By("waiting for all pods have no pending restart", func() {
-		podList, err := env.GetClusterPodList(namespace, clusterName)
-		Expect(err).ToNot(HaveOccurred())
-		query := "SELECT EXISTS(SELECT 1 FROM pg_settings WHERE pending_restart)"
-		// Check that the new parameter has been modified in every pod
-		Eventually(func() (bool, error) {
-			noPendingRestart := true
-			for _, pod := range podList.Items {
-				stdout, _, err := env.ExecQueryInInstancePod(
-					testsUtils.PodLocator{
-						Namespace: pod.Namespace,
-						PodName:   pod.Name,
-					},
-					testsUtils.PostgresDBName,
-					query)
-				if err != nil {
-					return false, nil
-				}
-				if strings.Trim(stdout, "\n") == "f" {
-					continue
-				}
-
-				noPendingRestart = false
-				break
-			}
-			return noPendingRestart, nil
-		}, timeout, 2).Should(BeEquivalentTo(true),
-			"all pods in cluster has no pending restart")
-	})
-}
-
 func AssertBackupConditionTimestampChangedInClusterStatus(
 	namespace,
 	clusterName string,
